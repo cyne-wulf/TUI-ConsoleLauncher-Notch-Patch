@@ -1477,6 +1477,14 @@ public class Tuils {
 
     public static void init(Context context) {
         if (folder != null) return;
+
+        // Check for legacy TUI folder at storage root with existing configs
+        File legacyFolder = new File(Environment.getExternalStorageDirectory(), "TUI");
+        if (legacyFolder.exists() && legacyFolder.isDirectory() && new File(legacyFolder, "theme.xml").exists()) {
+            folder = legacyFolder;
+            return;
+        }
+
         folder = context.getExternalFilesDir(null);
         if (folder == null) {
             folder = context.getFilesDir();
