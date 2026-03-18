@@ -31,6 +31,22 @@ public enum Behavior implements XMLPrefsSave {
             return XMLPrefsSave.BOOLEAN;
         }
     },
+    double_tap_open_keyboard {
+        @Override
+        public String defaultValue() {
+            return "false";
+        }
+
+        @Override
+        public String info() {
+            return "If true, double tapping blank space will open the keyboard and focus the input field";
+        }
+
+        @Override
+        public String type() {
+            return XMLPrefsSave.BOOLEAN;
+        }
+    },
     double_tap_cmd {
         @Override
         public String defaultValue() {

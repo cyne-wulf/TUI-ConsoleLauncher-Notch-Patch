@@ -913,7 +913,8 @@ public class UIManager implements OnTouchListener {
 
         lockOnDbTap = XMLPrefsManager.getBoolean(Behavior.double_tap_lock);
         doubleTapCmd = XMLPrefsManager.get(Behavior.double_tap_cmd);
-        if(!lockOnDbTap && doubleTapCmd == null) {
+        boolean doubleTapOpenKeyboard = XMLPrefsManager.getBoolean(Behavior.double_tap_open_keyboard);
+        if(!lockOnDbTap && doubleTapCmd == null && !doubleTapOpenKeyboard) {
             policy = null;
             component = null;
             gestureDetector = null;
@@ -977,6 +978,8 @@ public class UIManager implements OnTouchListener {
                         } else {
                             policy.lockNow();
                         }
+                    } else if(doubleTapOpenKeyboard) {
+                        openKeyboard();
                     }
 
                     return true;
@@ -1528,7 +1531,7 @@ public class UIManager implements OnTouchListener {
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        gestureDetector.onTouchEvent(event);
+        if(gestureDetector != null) gestureDetector.onTouchEvent(event);
         return v.onTouchEvent(event);
     }
 
