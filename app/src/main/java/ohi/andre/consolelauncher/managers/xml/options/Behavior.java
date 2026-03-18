@@ -23,7 +23,7 @@ public enum Behavior implements XMLPrefsSave {
 
         @Override
         public String info() {
-            return "If true, t-ui will lock the screen on double tap";
+            return "If true, t-ui will lock the screen on triple tap";
         }
 
         @Override

@@ -947,10 +947,31 @@ public class UIManager implements OnTouchListener {
                 }
             });
 
+            final long TRIPLE_TAP_WINDOW = 300;
+            final long[] lastDoubleTapTime = {0};
+            final Runnable[] pendingDoubleTapAction = {null};
+
             gestureDetector.setOnDoubleTapListener(new OnDoubleTapListener() {
 
                 @Override
                 public boolean onSingleTapConfirmed(MotionEvent e) {
+                    // If a single tap is confirmed shortly after a double-tap, it's a triple-tap
+                    if(lockOnDbTap && System.currentTimeMillis() - lastDoubleTapTime[0] < TRIPLE_TAP_WINDOW) {
+                        // Cancel pending double-tap action
+                        if(pendingDoubleTapAction[0] != null) {
+                            handler.removeCallbacks(pendingDoubleTapAction[0]);
+                            pendingDoubleTapAction[0] = null;
+                        }
+
+                        boolean admin = policy.isAdminActive(component);
+                        if (!admin) {
+                            Intent i = Tuils.requestAdmin(component, mContext.getString(R.string.admin_permission));
+                            mContext.startActivity(i);
+                        } else {
+                            policy.lockNow();
+                        }
+                        return true;
+                    }
                     return false;
                 }
 
@@ -970,15 +991,14 @@ public class UIManager implements OnTouchListener {
                     }
 
                     if(lockOnDbTap) {
-                        boolean admin = policy.isAdminActive(component);
-
-                        if (!admin) {
-                            Intent i = Tuils.requestAdmin(component, mContext.getString(R.string.admin_permission));
-                            mContext.startActivity(i);
-                        } else {
-                            policy.lockNow();
+                        // Delay double-tap actions to allow triple-tap detection
+                        lastDoubleTapTime[0] = System.currentTimeMillis();
+                        if(doubleTapOpenKeyboard) {
+                            pendingDoubleTapAction[0] = () -> openKeyboard();
+                            handler.postDelayed(pendingDoubleTapAction[0], TRIPLE_TAP_WINDOW);
                         }
                     } else if(doubleTapOpenKeyboard) {
+                        // No lock enabled, open keyboard immediately
                         openKeyboard();
                     }
 
