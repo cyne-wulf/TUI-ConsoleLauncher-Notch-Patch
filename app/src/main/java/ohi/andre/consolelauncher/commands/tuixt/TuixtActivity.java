@@ -104,10 +104,10 @@ public class TuixtActivity extends Activity {
             rootView.setBackgroundColor(XMLPrefsManager.getColor(Theme.overlay_color));
         }
 
-        // Apply insets so content doesn't render behind system bars or display cutout
+        // Apply insets so content doesn't render behind system bars, display cutout, or keyboard
         ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, windowInsets) -> {
             Insets insets = windowInsets.getInsets(
-                WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
+                WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime()
             );
             v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
             return WindowInsetsCompat.CONSUMED;
