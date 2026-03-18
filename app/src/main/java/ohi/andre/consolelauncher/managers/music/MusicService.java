@@ -85,7 +85,16 @@ public class MusicService extends Service implements
 
     public void initMusicPlayer(){
         player.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
-        player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            player.setAudioAttributes(
+                new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            );
+        } else {
+            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        }
         player.setOnPreparedListener(this);
         player.setOnCompletionListener(this);
         player.setOnErrorListener(this);
@@ -207,8 +216,7 @@ public class MusicService extends Service implements
             builder.addAction(action);
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) not = builder.build();
-        else not = builder.getNotification();
+        not = builder.build();
 
         return not;
     }
@@ -288,7 +296,11 @@ public class MusicService extends Service implements
         player.release();
         songs.clear();
 
-        stopForeground(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } else {
+            stopForeground(true);
+        }
     }
 
     public void setShuffle(boolean shuffle){

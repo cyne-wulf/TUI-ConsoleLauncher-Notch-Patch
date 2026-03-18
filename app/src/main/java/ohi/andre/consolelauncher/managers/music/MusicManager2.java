@@ -78,7 +78,11 @@ public class MusicManager2 implements MediaController.MediaPlayerControl {
     public void init() {
         playIntent = new Intent(mContext, MusicService.class);
         mContext.bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-        mContext.startService(playIntent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            mContext.startForegroundService(playIntent);
+        } else {
+            mContext.startService(playIntent);
+        }
     }
 
     public void refresh() {

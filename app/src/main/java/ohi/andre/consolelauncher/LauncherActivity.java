@@ -14,6 +14,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.appcompat.app.AppCompatActivity;
 import android.text.TextUtils;
@@ -50,7 +55,6 @@ import ohi.andre.consolelauncher.managers.xml.options.Behavior;
 import ohi.andre.consolelauncher.managers.xml.options.Notifications;
 import ohi.andre.consolelauncher.managers.xml.options.Theme;
 import ohi.andre.consolelauncher.managers.xml.options.Ui;
-import ohi.andre.consolelauncher.tuils.Assist;
 import ohi.andre.consolelauncher.tuils.BusyBoxInstaller;
 import ohi.andre.consolelauncher.tuils.CustomExceptionHandler;
 import ohi.andre.consolelauncher.tuils.LongClickableSpan;
@@ -205,13 +209,33 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
 
         List<String> permissionsToRequest = new ArrayList<>();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Android 13+ (API 33+) doesn't use READ/WRITE_EXTERNAL_STORAGE for general files
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+ (API 33+) uses granular media permissions instead of READ/WRITE_EXTERNAL_STORAGE
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    permissionsToRequest.add(Manifest.permission.READ_MEDIA_AUDIO);
+                }
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                    permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES);
+                }
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
+                    permissionsToRequest.add(Manifest.permission.READ_MEDIA_VIDEO);
+                }
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS);
+                }
+            } else {
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE);
                 }
                 if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                     permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                }
+            }
+
+            // Bluetooth permissions for API 31+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT);
                 }
             }
 
@@ -223,11 +247,6 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
             }
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                    permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS);
-                }
             }
         }
 
@@ -292,11 +311,11 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
             }
         }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && !XMLPrefsManager.getBoolean(Ui.ignore_bar_color)) {
-            Window window = getWindow();
+        // Enable edge-to-edge rendering
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        if(!XMLPrefsManager.getBoolean(Ui.ignore_bar_color)) {
+            Window window = getWindow();
             window.setStatusBarColor(XMLPrefsManager.getColor(Theme.statusbar_color));
             window.setNavigationBarColor(XMLPrefsManager.getColor(Theme.navigationbar_color));
         }
@@ -307,7 +326,11 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
         Intent keeperIntent = new Intent(this, KeeperService.class);
         if (showNotification) {
             keeperIntent.putExtra(KeeperService.PATH_KEY, XMLPrefsManager.get(Behavior.home_path));
-            startService(keeperIntent);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(keeperIntent);
+            } else {
+                startService(keeperIntent);
+            }
         } else {
             try {
                 stopService(keeperIntent);
@@ -315,10 +338,6 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
         }
 
         boolean fullscreen = XMLPrefsManager.getBoolean(Ui.fullscreen);
-        if(fullscreen) {
-            requestWindowFeature(Window.FEATURE_NO_TITLE);
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        }
 
         boolean useSystemWP = XMLPrefsManager.getBoolean(Ui.system_wallpaper);
         if (useSystemWP) {
@@ -384,13 +403,20 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
 
         ViewGroup mainView = (ViewGroup) findViewById(R.id.mainview);
 
-//        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !XMLPrefsManager.getBoolean(Ui.ignore_bar_color) && !XMLPrefsManager.getBoolean(Ui.statusbar_light_icons)) {
-//            mainView.setSystemUiVisibility(0);
-//        }
-
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !XMLPrefsManager.getBoolean(Ui.ignore_bar_color) && !XMLPrefsManager.getBoolean(Ui.statusbar_light_icons)) {
-            mainView.setSystemUiVisibility(mainView.getSystemUiVisibility() | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        // Handle light status bar icons using modern API
+        if(!XMLPrefsManager.getBoolean(Ui.ignore_bar_color) && !XMLPrefsManager.getBoolean(Ui.statusbar_light_icons)) {
+            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), mainView);
+            insetsController.setAppearanceLightStatusBars(true);
         }
+
+        // Apply insets so content doesn't render behind system bars or display cutout
+        ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(
+                WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
+            );
+            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
 
         ui = new UIManager(this, mainView, main.getMainPack(), canApplyTheme, main.executer());
 
@@ -400,7 +426,12 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
         in.in(Tuils.EMPTYSTRING);
         ui.focusTerminal();
 
-        if(fullscreen) Assist.assistActivity(this);
+        // Handle fullscreen by hiding system bars
+        if(fullscreen) {
+            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), mainView);
+            insetsController.hide(WindowInsetsCompat.Type.systemBars());
+            insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        }
 
         System.gc();
     }

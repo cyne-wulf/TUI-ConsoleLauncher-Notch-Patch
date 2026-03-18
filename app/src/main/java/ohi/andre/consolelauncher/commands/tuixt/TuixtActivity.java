@@ -7,6 +7,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import android.text.InputType;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -84,11 +88,11 @@ public class TuixtActivity extends Activity {
             finish();
         }
 
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && !XMLPrefsManager.getBoolean(Ui.ignore_bar_color)) {
-            Window window = getWindow();
+        // Enable edge-to-edge rendering
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        if(!XMLPrefsManager.getBoolean(Ui.ignore_bar_color)) {
+            Window window = getWindow();
             window.setStatusBarColor(XMLPrefsManager.getColor(Theme.statusbar_color));
             window.setNavigationBarColor(XMLPrefsManager.getColor(Theme.navigationbar_color));
         }
@@ -99,6 +103,15 @@ public class TuixtActivity extends Activity {
             setTheme(R.style.Custom_SystemWP);
             rootView.setBackgroundColor(XMLPrefsManager.getColor(Theme.overlay_color));
         }
+
+        // Apply insets so content doesn't render behind system bars or display cutout
+        ViewCompat.setOnApplyWindowInsetsListener(rootView, (v, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(
+                WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
+            );
+            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
 
         final boolean inputBottom = XMLPrefsManager.getBoolean(Ui.input_bottom);
         int layoutId = inputBottom ? R.layout.tuixt_view_input_down : R.layout.tuixt_view_input_up;

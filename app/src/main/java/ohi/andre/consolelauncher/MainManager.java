@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Parcelable;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.text.SpannableString;
@@ -256,12 +257,20 @@ public class MainManager {
             Intent i = new Intent(mContext, KeeperService.class);
             i.putExtra(KeeperService.CMD_KEY, cmd);
             i.putExtra(KeeperService.PATH_KEY, mainPack.currentDirectory.getAbsolutePath());
-            mContext.startService(i);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(i);
+            } else {
+                mContext.startService(i);
+            }
         }
 
         if(wasMusicService) {
             Intent i = new Intent(mContext, MusicService.class);
-            mContext.startService(i);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.startForegroundService(i);
+            } else {
+                mContext.startService(i);
+            }
         }
     }
 
