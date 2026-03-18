@@ -911,101 +911,78 @@ public class UIManager implements OnTouchListener {
 
         clearOnLock = XMLPrefsManager.getBoolean(Behavior.clear_on_lock);
 
-        lockOnDbTap = XMLPrefsManager.getBoolean(Behavior.triple_tap_lock) || XMLPrefsManager.getBoolean(Behavior.double_tap_lock);
+        lockOnDbTap = XMLPrefsManager.getBoolean(Behavior.double_tap_lock);
         doubleTapCmd = XMLPrefsManager.get(Behavior.double_tap_cmd);
-        boolean doubleTapOpenKeyboard = XMLPrefsManager.getBoolean(Behavior.double_tap_open_keyboard);
-        if(!lockOnDbTap && doubleTapCmd == null && !doubleTapOpenKeyboard) {
+        if(!lockOnDbTap && doubleTapCmd == null) {
             policy = null;
             component = null;
-            gestureDetector = null;
-        } else {
-            gestureDetector = new GestureDetectorCompat(mContext, new GestureDetector.OnGestureListener() {
-                @Override
-                public boolean onDown(MotionEvent e) {
-                    return false;
-                }
-
-                @Override
-                public void onShowPress(MotionEvent e) {}
-
-                @Override
-                public boolean onSingleTapUp(MotionEvent e) {
-                    return false;
-                }
-
-                @Override
-                public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-                    return false;
-                }
-
-                @Override
-                public void onLongPress(MotionEvent e) {}
-
-                @Override
-                public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                    return false;
-                }
-            });
-
-            final long TRIPLE_TAP_WINDOW = 300;
-            final long[] lastDoubleTapTime = {0};
-            final Runnable[] pendingDoubleTapAction = {null};
-
-            gestureDetector.setOnDoubleTapListener(new OnDoubleTapListener() {
-
-                @Override
-                public boolean onSingleTapConfirmed(MotionEvent e) {
-                    // If a single tap is confirmed shortly after a double-tap, it's a triple-tap
-                    if(lockOnDbTap && System.currentTimeMillis() - lastDoubleTapTime[0] < TRIPLE_TAP_WINDOW) {
-                        // Cancel pending double-tap action
-                        if(pendingDoubleTapAction[0] != null) {
-                            handler.removeCallbacks(pendingDoubleTapAction[0]);
-                            pendingDoubleTapAction[0] = null;
-                        }
-
-                        boolean admin = policy.isAdminActive(component);
-                        if (!admin) {
-                            Intent i = Tuils.requestAdmin(component, mContext.getString(R.string.admin_permission));
-                            mContext.startActivity(i);
-                        } else {
-                            policy.lockNow();
-                        }
-                        return true;
-                    }
-                    return false;
-                }
-
-                @Override
-                public boolean onDoubleTapEvent(MotionEvent e) {
-                    return true;
-                }
-
-                @Override
-                public boolean onDoubleTap(MotionEvent e) {
-
-                    if(doubleTapCmd != null && doubleTapCmd.length() > 0) {
-                        String input = mTerminalAdapter.getInput();
-                        mTerminalAdapter.setInput(doubleTapCmd);
-                        mTerminalAdapter.simulateEnter();
-                        mTerminalAdapter.setInput(input);
-                    }
-
-                    if(lockOnDbTap) {
-                        // Delay double-tap actions to allow triple-tap detection
-                        lastDoubleTapTime[0] = System.currentTimeMillis();
-                        if(doubleTapOpenKeyboard) {
-                            pendingDoubleTapAction[0] = () -> openKeyboard();
-                            handler.postDelayed(pendingDoubleTapAction[0], TRIPLE_TAP_WINDOW);
-                        }
-                    } else if(doubleTapOpenKeyboard) {
-                        // No lock enabled, open keyboard immediately
-                        openKeyboard();
-                    }
-
-                    return true;
-                }
-            });
         }
+
+        gestureDetector = new GestureDetectorCompat(mContext, new GestureDetector.OnGestureListener() {
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return false;
+            }
+
+            @Override
+            public void onShowPress(MotionEvent e) {}
+
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                return false;
+            }
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                return false;
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {}
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                return false;
+            }
+        });
+
+        gestureDetector.setOnDoubleTapListener(new OnDoubleTapListener() {
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                openKeyboard();
+                return true;
+            }
+
+            @Override
+            public boolean onDoubleTapEvent(MotionEvent e) {
+                return true;
+            }
+
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+
+                if(doubleTapCmd != null && doubleTapCmd.length() > 0) {
+                    String input = mTerminalAdapter.getInput();
+                    mTerminalAdapter.setInput(doubleTapCmd);
+                    mTerminalAdapter.simulateEnter();
+                    mTerminalAdapter.setInput(input);
+                }
+
+                if(lockOnDbTap) {
+                    boolean admin = policy.isAdminActive(component);
+
+                    if (!admin) {
+                        Intent i = Tuils.requestAdmin(component, mContext.getString(R.string.admin_permission));
+                        mContext.startActivity(i);
+                    } else {
+                        policy.lockNow();
+                    }
+                }
+
+                return true;
+            }
+        });
 
         int[] displayMargins = getListOfIntValues(XMLPrefsManager.get(Ui.display_margin_mm), 4, 0);
         DisplayMetrics metrics = mContext.getResources().getDisplayMetrics();
@@ -1551,7 +1528,7 @@ public class UIManager implements OnTouchListener {
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        if(gestureDetector != null) gestureDetector.onTouchEvent(event);
+        gestureDetector.onTouchEvent(event);
         return v.onTouchEvent(event);
     }
 
