@@ -911,7 +911,7 @@ public class UIManager implements OnTouchListener {
 
         clearOnLock = XMLPrefsManager.getBoolean(Behavior.clear_on_lock);
 
-        lockOnDbTap = XMLPrefsManager.getBoolean(Behavior.double_tap_lock);
+        lockOnDbTap = XMLPrefsManager.getBoolean(Behavior.triple_tap_lock) || XMLPrefsManager.getBoolean(Behavior.double_tap_lock);
         doubleTapCmd = XMLPrefsManager.get(Behavior.double_tap_cmd);
         boolean doubleTapOpenKeyboard = XMLPrefsManager.getBoolean(Behavior.double_tap_open_keyboard);
         if(!lockOnDbTap && doubleTapCmd == null && !doubleTapOpenKeyboard) {
