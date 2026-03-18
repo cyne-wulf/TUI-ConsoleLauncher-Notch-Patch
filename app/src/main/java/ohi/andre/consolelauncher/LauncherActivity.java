@@ -74,6 +74,7 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
     public static final int LOCATION_REQUEST_PERMISSION = 13;
 
     public static final int TUIXT_REQUEST = 10;
+    public static final int PICK_DIRECTORY_REQUEST = 14;
 
     private UIManager ui;
     private MainManager main;
@@ -596,6 +597,27 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
                 Tuils.sendOutput(this, R.string.tuixt_back_pressed);
             } else {
                 Tuils.sendOutput(this, data.getStringExtra(TuixtActivity.ERROR_KEY));
+            }
+        } else if(requestCode == PICK_DIRECTORY_REQUEST && resultCode == RESULT_OK && data != null) {
+            android.net.Uri treeUri = data.getData();
+            if(treeUri != null) {
+                // Take persistable permission so it survives reboots
+                try {
+                    getContentResolver().takePersistableUriPermission(treeUri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                } catch (SecurityException e) {
+                    // Best effort — some providers don't support persistable permissions
+                }
+
+                java.io.File dir = Tuils.treeUriToFile(treeUri);
+                if(dir != null && dir.exists() && dir.isDirectory()) {
+                    Tuils.setFolder(this, dir);
+                    Tuils.sendOutput(this, "Config directory set to: " + dir.getAbsolutePath());
+                    Tuils.sendOutput(this, "Reloading...");
+                    reload();
+                } else {
+                    Tuils.sendOutput(this, R.string.output_invaliddir);
+                }
             }
         }
     }

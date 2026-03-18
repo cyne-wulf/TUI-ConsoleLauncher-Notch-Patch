@@ -52,6 +52,8 @@
     <!-- files -->
     <string name="output_isdirectory">This is a directory</string>
     <string name="output_filenotfound">File not found</string>
+    <string name="output_nofilebrowser">No file browser found on this device</string>
+    <string name="output_invaliddir">Invalid directory — could not resolve selected folder</string>
 
     <!-- notifications -->
     <string name="notification_reader">T-UI notification reader</string>
@@ -264,6 +266,7 @@
         \n-reset [option] -> reset the value of an option
         \n-info [option] -> request info about the given option
         \n-apply [file] -> move a file to the t-ui directory
+        \n-directory -> choose a folder for config files using the system file browser
         \n-tutorial -> open the tutorial page
     </string>
     <string name="help_data">Toggle mobile data</string>

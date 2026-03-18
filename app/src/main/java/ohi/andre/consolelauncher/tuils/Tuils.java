@@ -1475,8 +1475,22 @@ public class Tuils {
     private static final int FILEUPDATE_DELAY = 100;
     private static File folder = null;
 
+    public static final String CUSTOM_DIR_PREF = "custom_config_directory";
+    private static final String PREFS_NAME_TUI = "tui_prefs";
+
     public static void init(Context context) {
         if (folder != null) return;
+
+        // Check for user-configured custom config directory
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME_TUI, Context.MODE_PRIVATE);
+        String customDir = prefs.getString(CUSTOM_DIR_PREF, null);
+        if (customDir != null) {
+            File customFolder = new File(customDir);
+            if (customFolder.exists() && customFolder.isDirectory()) {
+                folder = customFolder;
+                return;
+            }
+        }
 
         // Check for legacy TUI folder at storage root with existing configs
         File legacyFolder = new File(Environment.getExternalStorageDirectory(), "TUI");
@@ -1489,6 +1503,47 @@ public class Tuils {
         if (folder == null) {
             folder = context.getFilesDir();
         }
+    }
+
+    public static void setFolder(Context context, File newFolder) {
+        folder = newFolder;
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME_TUI, Context.MODE_PRIVATE);
+        prefs.edit().putString(CUSTOM_DIR_PREF, newFolder.getAbsolutePath()).apply();
+    }
+
+    public static void clearCustomFolder(Context context) {
+        folder = null;
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME_TUI, Context.MODE_PRIVATE);
+        prefs.edit().remove(CUSTOM_DIR_PREF).apply();
+    }
+
+    public static File treeUriToFile(Uri treeUri) {
+        String docId = null;
+        try {
+            docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
+        } catch (Exception e) {
+            return null;
+        }
+
+        if (docId == null) return null;
+
+        // Handle primary storage: "primary:path/to/folder"
+        String[] split = docId.split(":");
+        if (split.length >= 2 && "primary".equalsIgnoreCase(split[0])) {
+            return new File(Environment.getExternalStorageDirectory(), split[1]);
+        } else if (split.length == 1 && "primary".equalsIgnoreCase(split[0])) {
+            return Environment.getExternalStorageDirectory();
+        }
+
+        // Handle secondary storage volumes: "XXXX-XXXX:path/to/folder"
+        String volumeId = split[0];
+        String relativePath = split.length >= 2 ? split[1] : "";
+        File storageDir = new File("/storage/" + volumeId);
+        if (storageDir.exists()) {
+            return relativePath.isEmpty() ? storageDir : new File(storageDir, relativePath);
+        }
+
+        return null;
     }
 
     public static File getFolder() {

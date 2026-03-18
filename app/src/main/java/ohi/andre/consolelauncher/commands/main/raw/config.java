@@ -1,12 +1,15 @@
 package ohi.andre.consolelauncher.commands.main.raw;
 
+import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.Intent;
 import android.content.SharedPreferences;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import ohi.andre.consolelauncher.LauncherActivity;
 import ohi.andre.consolelauncher.R;
 import ohi.andre.consolelauncher.UIManager;
 import ohi.andre.consolelauncher.commands.CommandAbstraction;
@@ -315,6 +318,24 @@ public class config extends ParamCommand {
                 file.renameTo(dest);
 
                 return "Path: " + dest.getAbsolutePath();
+            }
+        },
+        directory {
+            @Override
+            public int[] args() {
+                return new int[0];
+            }
+
+            @Override
+            public String exec(ExecutePack pack) {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                try {
+                    ((Activity) pack.context).startActivityForResult(intent, LauncherActivity.PICK_DIRECTORY_REQUEST);
+                } catch (ActivityNotFoundException e) {
+                    return pack.context.getString(R.string.output_nofilebrowser);
+                }
+                return "Current: " + Tuils.getFolder().getAbsolutePath();
             }
         },
         tutorial {
