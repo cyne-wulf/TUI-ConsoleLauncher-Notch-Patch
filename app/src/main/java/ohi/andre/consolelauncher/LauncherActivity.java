@@ -22,9 +22,11 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.appcompat.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.view.ContextMenu;
 import android.view.KeyEvent;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -75,6 +77,11 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
 
     public static final int TUIXT_REQUEST = 10;
     public static final int PICK_DIRECTORY_REQUEST = 14;
+
+    // Edge safe zone in dp — touches starting within this margin from screen edges
+    // are passed through to the system (Samsung Edge Panels, gesture nav, etc.)
+    private static final int EDGE_SAFE_ZONE_DP = 24;
+    private boolean edgeGestureInProgress = false;
 
     private UIManager ui;
     private MainManager main;
@@ -586,6 +593,30 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        int action = event.getActionMasked();
+
+        if(action == MotionEvent.ACTION_DOWN) {
+            float x = event.getRawX();
+            float y = event.getRawY();
+            DisplayMetrics dm = getResources().getDisplayMetrics();
+            int edgePx = (int) (EDGE_SAFE_ZONE_DP * dm.density);
+
+            edgeGestureInProgress = (x < edgePx || x > dm.widthPixels - edgePx
+                    || y < edgePx || y > dm.heightPixels - edgePx);
+        }
+
+        if(edgeGestureInProgress) {
+            if(action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+                edgeGestureInProgress = false;
+            }
+            return false;
+        }
+
+        return super.dispatchTouchEvent(event);
     }
 
     @Override
