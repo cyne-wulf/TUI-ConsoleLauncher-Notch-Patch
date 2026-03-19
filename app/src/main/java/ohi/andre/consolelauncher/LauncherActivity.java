@@ -452,8 +452,8 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
             WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), mainView);
             insetsController.setAppearanceLightStatusBars(false);
             insetsController.setAppearanceLightNavigationBars(false);
-            insetsController.hide(WindowInsetsCompat.Type.systemBars());
-            insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            // Bars are kept visible but transparent — hiding them would install a
+            // system-level edge-swipe interceptor that blocks Samsung Edge Panel.
         }
 
         System.gc();
