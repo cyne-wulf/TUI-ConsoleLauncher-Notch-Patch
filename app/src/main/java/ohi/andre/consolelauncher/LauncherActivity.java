@@ -57,6 +57,7 @@ import ohi.andre.consolelauncher.managers.xml.options.Behavior;
 import ohi.andre.consolelauncher.managers.xml.options.Notifications;
 import ohi.andre.consolelauncher.managers.xml.options.Theme;
 import ohi.andre.consolelauncher.managers.xml.options.Ui;
+import ohi.andre.consolelauncher.tuils.Assist;
 import ohi.andre.consolelauncher.tuils.BusyBoxInstaller;
 import ohi.andre.consolelauncher.tuils.CustomExceptionHandler;
 import ohi.andre.consolelauncher.tuils.LongClickableSpan;
@@ -349,9 +350,9 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
 
         boolean useSystemWP = XMLPrefsManager.getBoolean(Ui.system_wallpaper);
         if (useSystemWP) {
-            setTheme(R.style.Custom_SystemWP);
+            setTheme(fullscreen ? R.style.Custom_SystemWP_Fullscreen : R.style.Custom_SystemWP);
         } else {
-            setTheme(R.style.Custom_Solid);
+            setTheme(fullscreen ? R.style.Custom_Solid_Fullscreen : R.style.Custom_Solid);
         }
 
         try {
@@ -442,18 +443,11 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
         in.in(Tuils.EMPTYSTRING);
         ui.focusTerminal();
 
-        // Fullscreen: hide system bars and set them transparent as fallback.
-        // Transparent colors ensure any transient reveal blends with the app.
-        // The dispatchTouchEvent edge safe zone passes edge swipes through
-        // to preserve Samsung Edge Panel and system gesture functionality.
+        // Theme-based fullscreen (android:windowFullscreen=true) hides system bars
+        // without installing edge-swipe gesture interceptors, preserving Samsung
+        // Edge Panel. Assist handles keyboard resize in fullscreen (Android bug #5497).
         if(fullscreen) {
-            getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
-            getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
-            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), mainView);
-            insetsController.setAppearanceLightStatusBars(false);
-            insetsController.setAppearanceLightNavigationBars(false);
-            // Bars are kept visible but transparent — hiding them would install a
-            // system-level edge-swipe interceptor that blocks Samsung Edge Panel.
+            Assist.assistActivity(this);
         }
 
         System.gc();
