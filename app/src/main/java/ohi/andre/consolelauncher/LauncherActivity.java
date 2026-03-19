@@ -434,11 +434,15 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
         in.in(Tuils.EMPTYSTRING);
         ui.focusTerminal();
 
-        // Handle fullscreen by hiding system bars
+        // Use transparent bars instead of hiding them, so Android doesn't
+        // reserve edge swipes for "reveal hidden bars" gestures.
+        // This preserves Samsung Edge Panel and other edge gesture functionality.
         if(fullscreen) {
+            getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+            getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
             WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), mainView);
-            insetsController.hide(WindowInsetsCompat.Type.systemBars());
-            insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            insetsController.setAppearanceLightStatusBars(false);
+            insetsController.setAppearanceLightNavigationBars(false);
         }
 
         System.gc();
