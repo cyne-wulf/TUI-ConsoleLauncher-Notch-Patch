@@ -417,11 +417,16 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
             insetsController.setAppearanceLightStatusBars(true);
         }
 
-        // Apply insets so content doesn't render behind system bars, display cutout, or keyboard
+        // Apply insets so content doesn't render behind system bars, display cutout, or keyboard.
+        // In fullscreen mode, skip system bar insets so content fills behind hidden/transparent bars.
         ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, windowInsets) -> {
-            Insets insets = windowInsets.getInsets(
-                WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime()
-            );
+            int insetTypes;
+            if(fullscreen) {
+                insetTypes = WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime();
+            } else {
+                insetTypes = WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime();
+            }
+            Insets insets = windowInsets.getInsets(insetTypes);
             v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
@@ -434,15 +439,18 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
         in.in(Tuils.EMPTYSTRING);
         ui.focusTerminal();
 
-        // Use transparent bars instead of hiding them, so Android doesn't
-        // reserve edge swipes for "reveal hidden bars" gestures.
-        // This preserves Samsung Edge Panel and other edge gesture functionality.
+        // Fullscreen: hide system bars and set them transparent as fallback.
+        // Transparent colors ensure any transient reveal blends with the app.
+        // The dispatchTouchEvent edge safe zone passes edge swipes through
+        // to preserve Samsung Edge Panel and system gesture functionality.
         if(fullscreen) {
             getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
             getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
             WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), mainView);
             insetsController.setAppearanceLightStatusBars(false);
             insetsController.setAppearanceLightNavigationBars(false);
+            insetsController.hide(WindowInsetsCompat.Type.systemBars());
+            insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         }
 
         System.gc();
