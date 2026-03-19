@@ -9,6 +9,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,6 +35,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,7 +59,6 @@ import ohi.andre.consolelauncher.managers.xml.options.Behavior;
 import ohi.andre.consolelauncher.managers.xml.options.Notifications;
 import ohi.andre.consolelauncher.managers.xml.options.Theme;
 import ohi.andre.consolelauncher.managers.xml.options.Ui;
-import ohi.andre.consolelauncher.tuils.Assist;
 import ohi.andre.consolelauncher.tuils.BusyBoxInstaller;
 import ohi.andre.consolelauncher.tuils.CustomExceptionHandler;
 import ohi.andre.consolelauncher.tuils.LongClickableSpan;
@@ -350,9 +351,9 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
 
         boolean useSystemWP = XMLPrefsManager.getBoolean(Ui.system_wallpaper);
         if (useSystemWP) {
-            setTheme(fullscreen ? R.style.Custom_SystemWP_Fullscreen : R.style.Custom_SystemWP);
+            setTheme(R.style.Custom_SystemWP);
         } else {
-            setTheme(fullscreen ? R.style.Custom_Solid_Fullscreen : R.style.Custom_Solid);
+            setTheme(R.style.Custom_Solid);
         }
 
         try {
@@ -443,11 +444,29 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
         in.in(Tuils.EMPTYSTRING);
         ui.focusTerminal();
 
-        // Theme-based fullscreen (android:windowFullscreen=true) hides system bars
-        // without installing edge-swipe gesture interceptors, preserving Samsung
-        // Edge Panel. Assist handles keyboard resize in fullscreen (Android bug #5497).
+        // Fullscreen: hide system bars with transparent fallback colors.
+        // Content fills the screen via edge-to-edge mode + insets listener
+        // skipping system bar padding.
         if(fullscreen) {
-            Assist.assistActivity(this);
+            getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+            getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+            WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), mainView);
+            insetsController.setAppearanceLightStatusBars(false);
+            insetsController.setAppearanceLightNavigationBars(false);
+            insetsController.hide(WindowInsetsCompat.Type.systemBars());
+            insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+
+            // Exclude the right edge from system gesture detection so Samsung
+            // Edge Panel can receive swipes. The API allows up to 200dp per edge.
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                mainView.post(() -> {
+                    int h = mainView.getHeight();
+                    int w = mainView.getWidth();
+                    int edgePx = (int) (EDGE_SAFE_ZONE_DP * getResources().getDisplayMetrics().density);
+                    mainView.setSystemGestureExclusionRects(Collections.singletonList(
+                            new Rect(w - edgePx, 0, w, h)));
+                });
+            }
         }
 
         System.gc();
