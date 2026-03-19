@@ -419,10 +419,13 @@ public class LauncherActivity extends AppCompatActivity implements Reloadable {
 
         // Apply insets so content doesn't render behind system bars, display cutout, or keyboard.
         // In fullscreen mode, skip system bar insets so content fills behind hidden/transparent bars.
+        // When fullscreen_ignore_cutout is true, also skip display cutout insets (content extends behind notch/punch hole).
+        boolean ignoreCutout = fullscreen && XMLPrefsManager.getBoolean(Ui.fullscreen_ignore_cutout);
         ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, windowInsets) -> {
             int insetTypes;
             if(fullscreen) {
-                insetTypes = WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime();
+                insetTypes = ignoreCutout ? WindowInsetsCompat.Type.ime()
+                        : WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime();
             } else {
                 insetTypes = WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime();
             }

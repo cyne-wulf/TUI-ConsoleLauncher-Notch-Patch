@@ -380,6 +380,22 @@ public enum Ui implements XMLPrefsSave {
             return "If true, t-ui will run in fullscreen mode";
         }
     },
+    fullscreen_ignore_cutout {
+        @Override
+        public String defaultValue() {
+            return "true";
+        }
+
+        @Override
+        public String type() {
+            return XMLPrefsSave.BOOLEAN;
+        }
+
+        @Override
+        public String info() {
+            return "If true, fullscreen content extends behind the display cutout (notch/punch hole). Only applies when fullscreen is true";
+        }
+    },
     device_index {
         @Override
         public String defaultValue() {
