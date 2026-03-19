@@ -887,6 +887,8 @@ public class UIManager implements OnTouchListener {
 
         mContext = context;
 
+        edgeSafeZonePx = (int) (EDGE_SAFE_ZONE_DP * mContext.getResources().getDisplayMetrics().density);
+
         preferences = mContext.getSharedPreferences(PREFS_NAME, 0);
 
         handler = new Handler();
@@ -1526,8 +1528,22 @@ public class UIManager implements OnTouchListener {
         closeKeyboard();
     }
 
+    // Edge safe zone width in dp — taps/swipes within this margin from screen edges
+    // are passed through to the system (Samsung Edge Panels, gesture nav, etc.)
+    private static final int EDGE_SAFE_ZONE_DP = 24;
+    private int edgeSafeZonePx;
+
     @Override
     public boolean onTouch(View v, MotionEvent event) {
+        float x = event.getRawX();
+        float y = event.getRawY();
+        DisplayMetrics dm = mContext.getResources().getDisplayMetrics();
+
+        if(x < edgeSafeZonePx || x > dm.widthPixels - edgeSafeZonePx
+                || y < edgeSafeZonePx || y > dm.heightPixels - edgeSafeZonePx) {
+            return false;
+        }
+
         gestureDetector.onTouchEvent(event);
         return v.onTouchEvent(event);
     }
